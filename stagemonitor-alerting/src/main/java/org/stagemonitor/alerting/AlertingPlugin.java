@@ -1,15 +1,9 @@
 package org.stagemonitor.alerting;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.stagemonitor.alerting.alerter.AlertSender;
-import org.stagemonitor.alerting.alerter.AlertTemplateProcessor;
-import org.stagemonitor.alerting.alerter.AlerterTypeServlet;
-import org.stagemonitor.alerting.alerter.IncidentServlet;
-import org.stagemonitor.alerting.alerter.Subscription;
-import org.stagemonitor.alerting.alerter.TestAlertSenderServlet;
+import org.stagemonitor.alerting.alerter.*;
 import org.stagemonitor.alerting.annotation.SlaCheckCreatingClassPathScanner;
 import org.stagemonitor.alerting.check.Check;
 import org.stagemonitor.alerting.incident.ConcurrentMapIncidentRepository;
@@ -24,14 +18,10 @@ import org.stagemonitor.tracing.TracingPlugin;
 import org.stagemonitor.web.servlet.initializer.ServletContainerInitializerUtil;
 import org.stagemonitor.web.servlet.initializer.StagemonitorServletContainerInitializer;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 import javax.servlet.ServletContext;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class AlertingPlugin extends StagemonitorPlugin {
 
@@ -54,7 +44,8 @@ public class AlertingPlugin extends StagemonitorPlugin {
 			.configurationCategory(ALERTING_PLUGIN_NAME)
 			.buildWithDefault(60L);
 	private final ConfigurationOption<Map<String, Subscription>> subscriptions = ConfigurationOption
-			.jsonOption(new TypeReference<Map<String, Subscription>>() {}, Map.class)
+			.jsonOption(new TypeReference<Map<String, Subscription>>() {
+			}, Map.class)
 			.key("stagemonitor.alerts.subscriptions")
 			.dynamic(true)
 			.label("Alert Subscriptions")
@@ -62,7 +53,8 @@ public class AlertingPlugin extends StagemonitorPlugin {
 			.configurationCategory(ALERTING_PLUGIN_NAME)
 			.buildWithDefault(Collections.<String, Subscription>emptyMap());
 	private final ConfigurationOption<Map<String, Check>> checks = ConfigurationOption
-			.jsonOption(new TypeReference<Map<String, Check>>() {}, Map.class)
+			.jsonOption(new TypeReference<Map<String, Check>>() {
+			}, Map.class)
 			.key("stagemonitor.alerts.checks")
 			.dynamic(true)
 			.label("Check Groups")
@@ -202,6 +194,44 @@ public class AlertingPlugin extends StagemonitorPlugin {
 			.configurationCategory(ALERTING_PLUGIN_NAME)
 			.buildWithDefault("[${incident.oldStatus!'OK'} -> ${incident.newStatus}] ${incident.checkName} has ${incident.failedChecks} failing check<#if incident.failedChecks gt 1>s</#if>");
 
+
+	private ConfigurationOption<String> wechatAppId = ConfigurationOption.stringOption()
+			.key("stagemonitor.alerts.wechat.appId")
+			.dynamic(true)
+			.label("Wechat App Id")
+			.description("Wechat App Id for the Wechat. You can find it in your Wechat account settings.")
+			.configurationCategory(ALERTING_PLUGIN_NAME)
+			.sensitive()
+			.build();
+
+	private ConfigurationOption<String> wechatSecret = ConfigurationOption.stringOption()
+			.key("stagemonitor.alerts.wechat.secret")
+			.dynamic(true)
+			.label("Wechat App secret")
+			.description("Wechat App Id for the Wechat secret. You can find it in your Wechat account settings.")
+			.configurationCategory(ALERTING_PLUGIN_NAME)
+			.sensitive()
+			.build();
+
+	private ConfigurationOption<String> wechatWarnTemplateId = ConfigurationOption.stringOption()
+			.key("stagemonitor.alerts.wechat.warnTemplateId")
+			.dynamic(true)
+			.label("Wechat Template id for warning")
+			.description("Wechat template id. You can find it in your Wechat account settings.")
+			.configurationCategory(ALERTING_PLUGIN_NAME)
+			.sensitive()
+			.build();
+
+	private ConfigurationOption<Collection<String>> wechatOpenIds = ConfigurationOption.stringsOption()
+			.key("stagemonitor.alerts.wechat.openIds")
+			.dynamic(true)
+			.label("Wechat openid")
+			.description("Wechat user's openid. You can find it in your Wechat account settings.")
+			.configurationCategory(ALERTING_PLUGIN_NAME)
+			.sensitive()
+			.build();
+
+
 	private AlertSender alertSender;
 	private IncidentRepository incidentRepository;
 	private AlertTemplateProcessor alertTemplateProcessor;
@@ -333,6 +363,23 @@ public class AlertingPlugin extends StagemonitorPlugin {
 
 	public String getPushbulletAccessToken() {
 		return pushbulletAccessToken.getValue();
+	}
+
+
+	public String getWechatAppId() {
+		return wechatAppId.getValue();
+	}
+
+	public String getWechatSecret() {
+		return wechatSecret.getValue();
+	}
+
+	public String getWechatWarnTemplateId() {
+		return wechatWarnTemplateId.getValue();
+	}
+
+	public Collection<String> getWechatOpenIds() {
+		return wechatOpenIds.getValue();
 	}
 
 	public static class Initializer implements StagemonitorServletContainerInitializer {

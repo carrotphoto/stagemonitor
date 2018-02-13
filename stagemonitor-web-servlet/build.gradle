@@ -2,6 +2,13 @@ dependencies {
 	compile project(":stagemonitor-tracing")
 	compile project(":stagemonitor-jvm")
 	compile project(":stagemonitor-jdbc")
+	compile(project(":stagemonitor-os")) {
+		exclude group: 'org.slf4j'
+	}
+	compile(project(":stagemonitor-alerting")) {
+		exclude group: 'org.slf4j'
+	}
+
 	compile "io.dropwizard.metrics:metrics-json:$metricsVersion"
 	provided 'javax.servlet:javax.servlet-api:3.0.1'
 	// optional
